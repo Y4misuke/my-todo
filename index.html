@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>每日任务</title>
+    <style>
+        /* ---------- 主题变量：亮色 ---------- */
+        :root {
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --text: #1e2a3a;
+            --muted: #6b7a8f;
+            --border: #e5eaf1;
+            --primary: pink;
+            --primary-dark: #5a7ae0;
+            --danger: #ff6b6b;
+            --success: #2ecc71;
+            --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        /* ---------- 主题变量：暗色 ---------- */
+        [data-theme="dark"] {
+            --bg: #121826;
+            --card: #1b2333;
+            --text: #e8edf5;
+            --muted: #98a6bb;
+            --border: #2a3548;
+            --primary: pink;
+            --primary-dark: #6a88e6;
+            --danger: #ff7a7a;
+            --success: #3ddc84;
+            --shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ---------- 全局重置 ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 24px 16px;
+            background: var(--bg);
+            color: var(--text);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 680px;
+        }
+
+        /* ---------- 顶部 ---------- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 22px;
+            gap: 16px;
+        }
+
+        h1 {
+            font-size: 28px;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            margin-top: 6px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .theme-btn {
+            width: 46px;
+            height: 46px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--card);
+            color: var(--text);
+            font-size: 20px;
+            cursor: pointer;
+            transition: transform 0.15s, background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.06);
+            background: var(--border);
+        }
+
+        /* ---------- 统计 ---------- */
+        .stats {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .stats span {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 12px;
+        }
+
+        .stats strong {
+            color: var(--primary);
+            font-size: 15px;
+        }
+
+        /* ---------- 输入区 ---------- */
+        .input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        #taskInput {
+            flex: 1;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            font-size: 16px;
+            outline: none;
+            background: var(--card);
+            color: var(--text);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        #taskInput:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(108, 140, 255, 0.15);
+        }
+
+        #addBtn {
+            padding: 0 24px;
+            border: none;
+            border-radius: 14px;
+            background: var(--primary);
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s;
+        }
+
+        #addBtn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        /* ---------- 筛选按钮 ---------- */
+        .filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: var(--card);
+            color: var(--muted);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #ffffff;
+        }
+
+        /* ---------- 任务列表 ---------- */
+        .task-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .task-item:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+
+        .task-item.done .task-text {
+            text-decoration: line-through;
+            color: var(--muted);
+            opacity: 0.75;
+        }
+
+        /* 圆形勾选框 */
+        .checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .task-item.done .checkbox {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .checkbox::after {
+            content: "✓";
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .task-item.done .checkbox::after {
+            opacity: 1;
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 15px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+/* 分类下拉框 */
+#categorySelect {
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--card);
+    color: var(--text);
+    font-size: 15px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+#categorySelect:focus {
+    border-color: var(--primary);
+}
+
+/* 分类标签 */
+.category-tag {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.category-tag.work {
+    background: #ffe8e8;
+    color: #d64545;
+}
+
+.category-tag.study {
+    background: #e8f0ff;
+    color: #4a6cf7;
+}
+
+.category-tag.life {
+    background: #e8fff0;
+    color: #2e9e5b;
+}
+
+/* 日期输入框 */
+#dueDateInput {
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--card);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+#dueDateInput:focus {
+    border-color: var(--primary);
+}
+
+/* 任务上的截止日期 */
+.due-date {
+    font-size: 12px;
+    color: var(--muted);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.due-date.overdue {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+        .edit-input {
+    flex: 1;
+    font-size: 15px;
+    line-height: 1.5;
+    padding: 4px 8px;
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    outline: none;
+    background: var(--card);
+    color: var(--text);
+    font-family: inherit;
+}
+
+        .delete-btn {
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-size: 22px;
+            line-height: 1;
+            padding: 4px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #ffecec;
+            color: var(--danger);
+        }
+
+        /* ---------- 空状态 ---------- */
+        .empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 44px 0;
+            font-size: 15px;
+        }
+
+        /* ---------- 底部操作 ---------- */
+        .footer-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 18px;
+            font-size: 14px;
+            color: var(--muted);
+            gap: 12px;
+        }
+
+        .clear-btn {
+            border: none;
+            background: transparent;
+            color: var(--danger);
+            font-size: 14px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .clear-btn:hover {
+            background: #ffecec;
+        }
+
+        /* ---------- 手机适配 ---------- */
+        @media (max-width: 520px) {
+            h1 {
+                font-size: 24px;
+            }
+
+            .input-row {
+                flex-direction: column;
+            }
+
+            #addBtn {
+                padding: 14px;
+            }
+
+            .stats {
+                gap: 8px;
+            }
+
+            .stats span {
+                padding: 6px 10px;
+                font-size: 13px;
+            }
+
+            .footer-actions {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app">
+        <header>
+            <div>
+                <h1>每日任务</h1>
+                <p class="subtitle">赶紧去做 🤯</p>
+            </div>
+            <button id="themeBtn" class="theme-btn" title="切换主题">🌙</button>
+        </header>
+
+        <div class="stats">
+            <span>共 <strong id="totalCount">0</strong> 项</span>
+            <span>未完成 <strong id="activeCount">0</strong> 项</span>
+            <span>已完成 <strong id="doneCount">0</strong> 项</span>
+        </div>
+
+        <div class="input-row">
+    <input type="text" id="taskInput" placeholder="输入一个任务，按回车或点击添加..." maxlength="80" />
+    <select id="categorySelect">
+        <option value="work">工作</option>
+        <option value="study" selected>学习</option>
+        <option value="life">生活</option>
+    </select>
+    <input type="date" id="dueDateInput" />
+    <button id="addBtn">添加</button>
+</div>
+
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">全部</button>
+            <button class="filter-btn" data-filter="active">未完成</button>
+            <button class="filter-btn" data-filter="done">已完成</button>
+        </div>
+
+        <ul class="task-list" id="taskList"></ul>
+
+        <div class="empty" id="emptyState">还没有任务，添加一个吧！</div>
+
+        <div class="footer-actions">
+            <span>数据保存在你的浏览器里</span>
+            <button class="clear-btn" id="clearDoneBtn">清除已完成</button>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 获取页面元素 ====================
+        const taskInput = document.getElementById('taskInput');
+        const categorySelect = document.getElementById('categorySelect');
+        const dueDateInput = document.getElementById('dueDateInput');
+        const addBtn = document.getElementById('addBtn');
+        const taskList = document.getElementById('taskList');
+        const emptyState = document.getElementById('emptyState');
+        const totalCount = document.getElementById('totalCount');
+        const activeCount = document.getElementById('activeCount');
+        const doneCount = document.getElementById('doneCount');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const clearDoneBtn = document.getElementById('clearDoneBtn');
+        const themeBtn = document.getElementById('themeBtn');
+
+          // ==================== 状态 ====================
+let tasks = [
+    { id: '1', text: '学习 HTML', done: false, category: 'study', createdAt: new Date().toISOString() },
+    { id: '2', text: '学习 CSS', done: true, category: 'study', createdAt: new Date().toISOString() }
+];
+
+let currentFilter = 'all';
+
+        // ==================== 读取本地数据 ====================
+        function loadTasks() {
+            const saved = localStorage.getItem('myTodoTasks');
+            if (saved) {
+                try {
+                    tasks = JSON.parse(saved);
+                } catch (e) {
+                    tasks = [];
+                }
+            }
+        }
+
+        // ==================== 保存本地数据 ====================
+        function saveTasks() {
+            localStorage.setItem('myTodoTasks', JSON.stringify(tasks));
+        }
+
+        // ==================== 防止 XSS 转义 ====================
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ==================== 渲染页面 ====================
+     // 把 2026-09-20 格式化成 9月20日
+function formatDate(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    const month = d.getMonth() + 1;
+    const day = d.getDate();
+    return `${month}月${day}日`;
+}
+
+// 判断是否已过期
+function isOverdue(dateStr) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(dateStr + 'T00:00:00');
+    return due < today;
+}  
+
+         function render() {
+            let filteredTasks = tasks;
+            if (currentFilter === 'active') {
+                filteredTasks = tasks.filter(t => !t.done);
+            } else if (currentFilter === 'done') {
+                filteredTasks = tasks.filter(t => t.done);
+            }
+
+// ==================== 按截止日期排序 ====================
+    filteredTasks = filteredTasks.slice().sort((a, b) => {
+        // 1. 未完成排前面，已完成排后面
+        if (a.done !== b.done) {
+            return a.done ? 1 : -1;
+        }
+
+        // 2. 有截止日期的排前面，没有的排最后
+        const aTime = a.dueDate ? new Date(a.dueDate + 'T00:00:00').getTime() : Infinity;
+        const bTime = b.dueDate ? new Date(b.dueDate + 'T00:00:00').getTime() : Infinity;
+
+        if (aTime !== bTime) {
+            return aTime - bTime;
+        }
+
+        // 3. 日期相同，按创建时间排序
+        return (a.createdAt || '').localeCompare(b.createdAt || '');
+    });
+
+            taskList.innerHTML = '';
+
+            filteredTasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = 'task-item' + (task.done ? ' done' : '');
+                li.dataset.id = task.id;
+
+              const cat = task.category || 'study';
+const catText = { work: '工作', study: '学习', life: '生活' }[cat] || '学习';
+
+let dueHtml = '';
+if (task.dueDate) {
+    const overdueClass = (!task.done && isOverdue(task.dueDate)) ? 'overdue' : '';
+    dueHtml = `<span class="due-date ${overdueClass}">📅 ${formatDate(task.dueDate)}</span>`;
+}
+
+li.innerHTML = `
+    <div class="checkbox" data-action="toggle"></div>
+    <span class="category-tag ${cat}">${catText}</span>
+    <span class="task-text">${escapeHtml(task.text)}</span>
+    ${dueHtml}
+    <button class="delete-btn" data-action="delete" title="删除">×</button>
+`;
+
+                taskList.appendChild(li);
+            });
+
+            if (filteredTasks.length === 0) {
+                emptyState.style.display = 'block';
+                if (tasks.length === 0) {
+                    emptyState.textContent = '还没有任务，添加一个吧！';
+                } else if (currentFilter === 'active') {
+                    emptyState.textContent = '太棒了！没有未完成的任务 🎉';
+                } else if (currentFilter === 'done') {
+                    emptyState.textContent = '还没有已完成的任务';
+                }
+            } else {
+                emptyState.style.display = 'none';
+            }
+
+            const total = tasks.length;
+            const done = tasks.filter(t => t.done).length;
+            const active = total - done;
+            totalCount.textContent = total;
+            activeCount.textContent = active;
+            doneCount.textContent = done;
+
+            saveTasks();
+        }
+
+        // ==================== 添加任务 ====================
+       function addTask() {
+    const text = taskInput.value.trim();
+    if (!text) {
+        taskInput.focus();
+        return;
+    }
+
+    const category = categorySelect.value;
+    const dueDate = dueDateInput.value;
+
+    tasks.unshift({
+        id: Date.now().toString(),
+        text: text,
+        done: false,
+        category: category,
+        dueDate: dueDate,
+        createdAt: new Date().toISOString()
+    });
+
+    taskInput.value = '';
+    dueDateInput.value = '';
+    taskInput.focus();
+    render();
+}
+
+        // ==================== 事件绑定 ====================
+        addBtn.addEventListener('click', addTask);
+
+        taskInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
+
+        taskList.addEventListener('click', e => {
+            const target = e.target;
+            const action = target.dataset.action;
+            if (!action) return;
+
+            const li = target.closest('.task-item');
+            if (!li) return;
+            const id = li.dataset.id;
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            if (action === 'toggle') {
+                task.done = !task.done;
+                render();
+            } else if (action === 'delete') {
+                tasks = tasks.filter(t => t.id !== id);
+                render();
+            }
+        });
+
+// ==================== 双击编辑任务 ====================
+taskList.addEventListener('dblclick', e => {
+    const taskText = e.target.closest('.task-text');
+    if (!taskText) return;
+
+    const li = taskText.closest('.task-item');
+    const id = li.dataset.id;
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+
+    // 把 span 换成 input
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'edit-input';
+    input.value = task.text;
+    input.maxLength = 80;
+
+    taskText.replaceWith(input);
+    input.focus();
+    input.select();
+
+    // 保存编辑
+    function saveEdit() {
+        const newText = input.value.trim();
+        if (newText) {
+            task.text = newText;
+        }
+        render();
+    }
+
+    // 取消编辑
+    function cancelEdit() {
+        render();
+    }
+
+    // 按回车保存，按 Esc 取消
+    input.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter') {
+            saveEdit();
+        } else if (ev.key === 'Escape') {
+            cancelEdit();
+        }
+    });
+
+    // 失去焦点时保存
+    input.addEventListener('blur', saveEdit);
+});
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                render();
+            });
+        });
+
+        clearDoneBtn.addEventListener('click', () => {
+            if (tasks.some(t => t.done)) {
+                if (confirm('确定要清除所有已完成的任务吗？')) {
+                    tasks = tasks.filter(t => !t.done);
+                    render();
+                }
+            } else {
+                alert('当前没有已完成的任务');
+            }
+        });
+
+        // ==================== 主题切换 ====================
+        function loadTheme() {
+            const theme = localStorage.getItem('myTodoTheme') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+
+        themeBtn.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('myTodoTheme', next);
+            themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+        });
+
+        // ==================== 初始化 ====================
+        loadTasks();
+        loadTheme();
+        render();
+    </script>
+
+</body>
+</html>
